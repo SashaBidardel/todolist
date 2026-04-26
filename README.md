@@ -47,25 +47,31 @@ Para evitar que las tareas queden "huérfanas" o que la base de datos lance erro
 
 - **Integridad:** Se utiliza @Transactional para asegurar que el movimiento de tareas y el borrado de la categoría ocurran como una única operación atómica.
 
-## 🔐 Configuración de Seguridad (Spring Security 6)
+## 🔐 Seguridad y Usuarios
+Configuración basada en **Spring Security 6** con autenticación **HTTP Basic**.
 
-El sistema utiliza una arquitectura de autenticación **Stateless** basada en HTTP Basic.
+### 1. Registro de Usuarios (`UserService.java`)
+- **Cifrado:** Las contraseñas se encriptan con `BCryptPasswordEncoder` antes de guardarse.
+- **Validación:** Se comprueba la existencia previa del `username`.
+- **Roles:** A todo nuevo registro se le asigna por defecto el rol `USER`.
 
-### Componentes Clave
-1. **SecurityConfig:**
-   - Deshabilita CSRF para permitir pruebas desde Postman.
-   - Define que el registro (`/api/users/register`) sea público (`permitAll()`).
-   - Protege las categorías permitiendo solo al `ADMIN` realizar cambios.
-2. **UserDetailsService:**
-   - Actúa como puente entre Spring Security y el `UserRepository`.
-   - Carga el usuario de la base de datos y mapea sus roles como `authorities`.
-3. **BCryptPasswordEncoder:**
-   - Bean compartido entre el proceso de registro y el de autenticación para asegurar que el hashing coincida.
+### 2. Configuración de Acceso (`SecurityConfig.java`)
+- `/api/users/register`: Acceso público (`permitAll`).
+- `/api/categories/**`: Solo `ADMIN` puede crear/borrar (`hasAuthority`).
+- `/api/tasks/**`: Requiere estar autenticado (`authenticated`).
 
-### Flujo de Verificación
-- El cliente envía cabecera `Authorization: Basic [base64]`.
-- Spring intercepta la petición y usa `UserDetailsServiceImpl` para buscar el hash en la DB.
-- El `AuthenticationManager` compara los hashes usando BCrypt.
+---
+
+
+## 🧪 Guía de Pruebas en Postman
+
+| Operación | Método | Endpoint | Credenciales |
+| :--- | :---: | :--- | :--- |
+| **Registrar** | `POST` | `/api/users/register` | Ninguna (Public) |
+| **Ver Categorías** | `GET` | `/api/categories` | Admin o User |
+| **Crear Tarea** | `POST` | `/api/tasks` | Cualquier User |
+| **Borrar Categoría** | `DELETE` | `/api/categories/{id}` | Solo Admin |
+
 
 ## 📈 Coherencia del Diseño
 La elección de estos atributos no es aleatoria:
