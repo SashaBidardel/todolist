@@ -1,5 +1,7 @@
 package com.example.sashabf.service;
 
+import com.example.sashabf.exception.BadRequestException;
+import com.example.sashabf.exception.ResourceNotFoundException;
 import com.example.sashabf.model.Category;
 import com.example.sashabf.model.Task;
 import com.example.sashabf.repository.CategoryRepository;
@@ -20,33 +22,33 @@ public class CategoryService {
     private TaskRepository taskRepository;
    
 
-    // Listar todas (lo usarán tanto USER como ADMIN)
+    //1. Listar todas (lo usarán tanto USER como ADMIN)
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
 
-    // Crear categoría con validación de duplicados
+    //2. Crear categoría con validación de duplicados
     public Category createCategory(Category category) {
         if (categoryRepository.findByTitle(category.getTitle()).isPresent()) {
-            throw new RuntimeException("La categoría '" + category.getTitle() + "' ya existe.");
+            throw new BadRequestException("La categoría '" + category.getTitle() + "' ya existe.");
         }
         return categoryRepository.save(category);
     }
 
-    // Obtener una por ID (útil para asignar a una tarea)
+    //3. Obtener una por ID (útil para asignar a una tarea)
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con ID: " + id));
     }
 
-    // Borrar categoría (Solo ADMIN)
+    //4. Borrar categoría (Solo ADMIN)
     @Transactional
     public void deleteCategory(Long idABorrar) {
         Category general = categoryRepository.findByTitle("General").get();
         
         // Si intentan borrar la categoría general, lo impedimos
         if (idABorrar.equals(general.getId())) {
-            throw new RuntimeException("No se puede borrar la categoría por defecto");
+            throw new BadRequestException("No se puede borrar la categoría por defecto");
         }
 
         // Buscamos todas las tareas que pertenecen a la categoría que vamos a borrar
@@ -60,5 +62,22 @@ public class CategoryService {
 
         // Ahora ya podemos borrar la categoría de forma segura
         categoryRepository.deleteById(idABorrar);
+    }
+    // 5. Actualizar Categoría
+    public Category updateCategory(Long id, Category categoryDetails) {
+        // 1. Buscar la categoría
+        Category category = categoryRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con ID: " + id));
+
+        // 2. Validación: No permitir renombrar a "General" o nombres reservados 
+        if (category.getTitle().equalsIgnoreCase("General")) {
+            throw new BadRequestException("La categoría 'General' es del sistema y no se puede editar.");
+        }
+
+        // 3. Actualizar campos
+        category.setTitle(categoryDetails.getTitle());
+        
+        
+        return categoryRepository.save(category);
     }
 }

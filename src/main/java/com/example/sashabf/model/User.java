@@ -9,6 +9,8 @@ import lombok.Setter;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "users")
 @Getter @Setter
@@ -33,7 +35,9 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private UserRole role; // USER o ADMIN
-
+    
+    
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Task> tasks; 
 }

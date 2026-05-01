@@ -3,6 +3,7 @@ package com.example.sashabf.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -12,38 +13,47 @@ import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            // 1. Deshabilitar CSRF (necesario para APIs que usan Postman/Stateless)
-            .csrf(csrf -> csrf.disable())
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	    http
+	        .csrf(csrf -> csrf.disable())
+	        .authorizeHttpRequests(auth -> auth
+	            
+	        	// 1. Registro: Abierto
+	        	.requestMatchers( "/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
+	        	.requestMatchers("/api/users/register").permitAll()
 
-            // 2. Definir reglas de autorización
-            .authorizeHttpRequests(auth -> auth
-                // Registro de usuarios: Abierto para todo el mundo
-                .requestMatchers("/api/users/register").permitAll()
+	            // 2. Usuarios: Solo el ADMIN puede gestionar el listado y los roles
+	            .requestMatchers(HttpMethod.GET, "/api/users").hasAuthority("ADMIN") 
+	            .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAuthority("ADMIN")
+	            //  ADMIN promocione/degrade (ej: /api/users/role/{id})
+	            .requestMatchers(HttpMethod.PATCH, "/api/users/*/promote", "/api/users/*/demote").hasAuthority("ADMIN")
 
-                // Categorías: Todos las ven (GET), solo ADMIN las crea/borra (POST/DELETE)
-                .requestMatchers(HttpMethod.GET, "/api/categories/**").authenticated()
-                .requestMatchers("/api/categories/**").hasAuthority("ADMIN")
+	         // 3. Categorías
+	         // Primero: Definimos quién puede ver (GET). Esto incluye a USER, ADMIN y GESTOR.
+	         .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/categories").authenticated()
 
-                // Tags: Creación colaborativa para cualquier usuario registrado
-                .requestMatchers("/api/tags/**").authenticated()
+	         // Segundo: Cualquier otro método (POST, PUT, DELETE) sobre categorías
+	         // SOLO se permite a ADMIN y GESTOR.
+	         .requestMatchers("/api/categories/**", "/api/categories").hasAnyAuthority("ADMIN", "GESTOR")
+	            // 4. Tags: el USUARIO puede hacer CRUD de sus Tags
+	          
+	            .requestMatchers("/api/tags/**").hasAnyAuthority("USER", "GESTOR")
 
-                // Tareas: Cualquier usuario registrado (el filtro de dueño/admin va en el Service)
-                .requestMatchers("/api/tasks/**").authenticated()
+	            // 5. Tasks: el USUARIO puede hacer CRUD de sus Tags
+	            .requestMatchers("/api/tasks/**").hasAnyAuthority("USER", "GESTOR")
+	            // Permitimos PUT a /api/users/{id} para que el USER edite su perfil
+	            .requestMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
+	            
+	            .anyRequest().authenticated()
+	        )
+	        .httpBasic(withDefaults());
 
-                // Cualquier otra ruta requiere estar logueado
-                .anyRequest().authenticated()
-            )
-
-            // 3. Tipo de autenticación: Básica (Usuario y contraseña en las cabeceras)
-            .httpBasic(withDefaults());
-
-        return http.build();
-    }
+	    return http.build();
+	}
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
