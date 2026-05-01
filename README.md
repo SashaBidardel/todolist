@@ -14,7 +14,7 @@ La API cuenta con una capa de documentación profesional accesible en tiempo rea
     *   Esquemas de datos detallados para cada entidad.
 
 ## 📊 Modelo de Datos y Base de Datos
-La persistencia se gestiona con **Spring Data JPA** sobre una base de datos relacional (**MySQL/MariaDB**), con soporte para **H2** en entornos de desarrollo.
+La persistencia se gestiona con **Spring Data JPA** sobre una base de datos relacional (**MySQL/MariaDB**)
 
 ### Entidades Principales
 *   **User:** Almacena credenciales (cifradas con BCrypt), perfil y rol (`ADMIN`, `GESTOR`, `USER`).
