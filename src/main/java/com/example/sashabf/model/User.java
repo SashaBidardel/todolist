@@ -40,4 +40,8 @@ public class User {
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Task> tasks; 
+    
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Tag> createdTags;
 }

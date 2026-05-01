@@ -38,6 +38,11 @@ public class Task {
     
     @Enumerated(EnumType.STRING)
     private Priority priority; // Nivel de prioridad 
+    
+    private String estimatedTime; // Ejemplo: "2 horas", "3 días"
+
+    @Column(nullable = false)
+    private boolean important = false; // Por defecto no es destacada
     // -------------------------------------
 
     @ManyToOne
