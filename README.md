@@ -40,9 +40,9 @@ Se ha resuelto con éxito la colisión de nombres entre la entidad del modelo `T
 ### 3. Control de Propiedad
 El sistema valida en cada operación de edición o borrado que el usuario autenticado sea el **propietario** de la tarea .
 
-### 4. Indicador de Importancia (`important`):** Atributo booleano que permite al usuario destacar tareas de forma subjetiva, independientemente de su prioridad técnica.
+### 4. Indicador de Importancia (`important`):  Atributo booleano que permite al usuario destacar tareas de forma subjetiva, independientemente de su prioridad técnica.
 
-### 5. Estimación de Tiempo (`estimatedTime`):** Campo de texto flexible (ej: "2 horas") que permite una planificación realista de la carga de trabajo.
+### 5. Estimación de Tiempo (`estimatedTime`):  Campo de texto flexible (ej: "2 horas") que permite una planificación realista de la carga de trabajo.
 
 
 ## 🔐 Seguridad: Matriz de Permisos
