@@ -25,7 +25,7 @@ La persistencia se gestiona con **Spring Data JPA** sobre una base de datos rela
 ### Detalles de la Base de Datos
 *   **Relación Circular Seguro:** Se ha configurado el borrado lógico/reasignación para que, al eliminar una categoría, las tareas se muevan automáticamente a la categoría "General".
 *   **Cifrado de Datos:** Uso de `passwordEncoder` para asegurar que las contraseñas y otros datos sensibles (como siglas de docentes) nunca se almacenen en texto plano.
-*   **Auditoría:** Uso de `@PrePersist` para la creación automática de marcas de tiempo en las tareas.
+
 
 ## 🛠️ Lógica de Negocio y Ampliaciones (Actividad 1)
 
