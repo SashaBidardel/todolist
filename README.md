@@ -29,22 +29,18 @@ La persistencia se gestiona con **Spring Data JPA** sobre una base de datos rela
 
 ## 🛠️ Lógica de Negocio y Ampliaciones (Actividad 1)
 
-### 1. Gestión de Prioridad y Deadline
+### 1. Atributos adicionales: Gestión de Prioridad , Deadline, Indicador de importancia y Estimación de Tiempo
 Se han incorporado atributos para transformar la lista en una herramienta de productividad real:
 *   **Prioridad:** Permite el filtrado de tareas críticas.
 *   **Deadline:** Control de plazos para evitar tareas fuera de fecha.
+*   **Indicador de Importancia (`important`):** Atributo booleano que permite al usuario destacar tareas de forma subjetiva, independientemente de su prioridad técnica.
+*   **Estimación de Tiempo (`estimatedTime`):** Campo de texto flexible (ej: "2 horas") que permite una planificación realista de la carga de trabajo.
 
 ### 2. Resolución de Conflictos Técnicos
 Se ha resuelto con éxito la colisión de nombres entre la entidad del modelo `Tag` y la anotación de Swagger mediante el uso de nombres completamente cualificados (`io.swagger.v3.oas.annotations.tags.Tag`), garantizando un código limpio y una documentación funcional.
 
 ### 3. Control de Propiedad
 El sistema valida en cada operación de edición o borrado que el usuario autenticado sea el **propietario** de la tarea .
-
-### 4. Indicador de Importancia (`important`): 
- Atributo booleano que permite al usuario destacar tareas de forma subjetiva, independientemente de su prioridad técnica.
-
-### 5. Estimación de Tiempo (`estimatedTime`):  
-Campo de texto flexible (ej: "2 horas") que permite una planificación realista de la carga de trabajo.
 
 
 ## 🔐 Seguridad: Matriz de Permisos
