@@ -44,13 +44,14 @@ Se han implementado todos los endpoints obligatorios y las funcionalidades de am
 *   Eliminar **Tags** a tareas creadas. 
 *   Asignar **Tags** a tareas creadas.
 *   Buscar tareas con **tags** seleccionados.
+*   **EDITAR** su propio perfil
 
 ## 🔐 Seguridad: Matriz de Permisos 
 Configuración basada en **Spring Security 6** con autenticación **HTTP Basic (Stateless)**.
 
 | Rol | Permisos |
 | :--- | :--- |
-| **USER** | CRUD de sus propias tareas y tags; listar categorías; editar su propio perfil. |
+| **USER** | CRUD de sus propias tareas y tags; listar categorías; editar su propio perfil; añadir y eliminar tags a sus tareas. |
 | **GESTOR** | Todo lo de USER + CRUD de Categorías. |
 | **ADMIN** | CRUD Usuarios, CRUD Categorías y promoción/degradación de usuarios. |
 
