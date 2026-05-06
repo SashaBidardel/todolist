@@ -4,6 +4,7 @@ import com.example.sashabf.model.Category;
 import com.example.sashabf.service.CategoryService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -65,7 +66,12 @@ public class CategoryController {
         })
     @PreAuthorize("hasAnyAuthority('ADMIN', 'GESTOR')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(
+    		@Parameter(
+            description = "ID único de la categoría", 
+            required = true, // Marcado como obligatorio
+            example = "1"
+        )@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }
@@ -82,7 +88,12 @@ public class CategoryController {
         })
     @PreAuthorize("hasAnyAuthority('ADMIN', 'GESTOR')")
     @PutMapping("/{id}")
-    public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
+    public ResponseEntity<Category> update(
+    		@Parameter(
+            description = "ID de la categoría que se desea modificar", 
+            required = true, // Marcado como obligatorio
+            example = "1"
+        )@PathVariable Long id, @RequestBody Category category) {
         Category updatedCategory = categoryService.updateCategory(id, category);
         return ResponseEntity.ok(updatedCategory);
     }

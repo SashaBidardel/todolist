@@ -4,6 +4,7 @@ import com.example.sashabf.model.User;
 import com.example.sashabf.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -72,7 +73,9 @@ public class UserController {
             })
         @PreAuthorize("hasAuthority('ADMIN')")
         @DeleteMapping("/{id}")
-        public ResponseEntity<Void> delete(@PathVariable Long id) {
+        public ResponseEntity<Void> delete(
+        @Parameter(description = "ID del usuario a eliminar", required = true, example = "5")
+        @PathVariable Long id) {
             userService.deleteUser(id);
             return ResponseEntity.noContent().build();
         }
@@ -90,7 +93,7 @@ public class UserController {
             })
         @PreAuthorize("hasAuthority('ADMIN')")
         @PutMapping("/{id}")
-        public ResponseEntity<User> update(
+        public ResponseEntity<User> update(@Parameter(description = "ID del usuario a modificar", required = true, example = "2")
             @PathVariable Long id, 
             @RequestBody User user, 
             @AuthenticationPrincipal User currentUser 
@@ -131,7 +134,9 @@ public class UserController {
             @ApiResponse(responseCode = "403", description = "No tienes permisos para realizar esta acción")
         })
         @PatchMapping("/{id}/promote")
-        public ResponseEntity<Map<String, String>> promote(@PathVariable Long id) {
+        public ResponseEntity<Map<String, String>> promote(
+        @Parameter(description = "ID del usuario a promocionar", required = true, example = "3")
+        @PathVariable Long id) {
             userService.promoteToGestor(id);
             return ResponseEntity.ok(Map.of("message", "Usuario promocionado a GESTOR con éxito"));
         }
@@ -144,7 +149,9 @@ public class UserController {
                 @ApiResponse(responseCode = "403", description = "No tienes permisos para realizar esta acción")
             })
         @PatchMapping("/{id}/demote")
-        public ResponseEntity<Map<String, String>> demote(@PathVariable Long id) {
+        public ResponseEntity<Map<String, String>> demote(
+        @Parameter(description = "ID del usuario a degradar", required = true, example = "3") 
+         @PathVariable Long id) {
             userService.demoteToUser(id);
             return ResponseEntity.ok(Map.of("message", "Usuario degradado a USER con éxito"));
         }

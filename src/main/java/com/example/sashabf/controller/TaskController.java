@@ -7,6 +7,7 @@ import com.example.sashabf.service.TaskService;
 import com.example.sashabf.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -76,7 +77,8 @@ public class TaskController {
         })
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id, Principal principal) {
+    public ResponseEntity<Void> delete(@Parameter(description = "ID de la tarea a eliminar", required = true, example = "101")
+    @PathVariable Long id, Principal principal) {
         User user = userService.findByUsername(principal.getName());
         taskService.deleteTask(id, user);
         return ResponseEntity.noContent().build();
@@ -94,7 +96,9 @@ public class TaskController {
         })
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task taskDetails, Principal principal) {
+    public ResponseEntity<Task> updateTask(
+    @Parameter(description = "ID de la tarea a modificar", required = true, example = "101")
+    @PathVariable Long id, @RequestBody Task taskDetails, Principal principal) {
         User currentUser = userService.findByUsername(principal.getName()); 
         Task updatedTask = taskService.updateTask(id, taskDetails, currentUser);
         return ResponseEntity.ok(updatedTask);

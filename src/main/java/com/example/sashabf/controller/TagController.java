@@ -7,6 +7,7 @@ import com.example.sashabf.model.User;
 import com.example.sashabf.service.TagService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
@@ -75,6 +76,7 @@ public class TagController {
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
     public ResponseEntity<Tag> update(
+    	@Parameter(description = "ID único de la etiqueta", required = true, example = "10")
         @PathVariable Long id, 
         @RequestBody Tag tag, 
         @AuthenticationPrincipal User user
@@ -95,6 +97,7 @@ public class TagController {
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
+        @Parameter(description = "ID de la etiqueta a borrar", required = true, example = "10")
         @PathVariable Long id, 
         @AuthenticationPrincipal User user
     ) throws ForbiddenException {
