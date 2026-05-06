@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -41,10 +42,9 @@ public class TaskController {
             @ApiResponse(responseCode = "401", description = "No autorizado: Debes iniciar sesión")
         })
     @PreAuthorize("isAuthenticated()")
-    @GetMapping
-    public ResponseEntity<List<Task>> getMyTasks(Principal principal) {
-        User user = userService.findByUsername(principal.getName());
-        return ResponseEntity.ok(taskService.getTasksByUser(user));
+    public ResponseEntity<List<Task>> getAll() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.getTasksByUser(username));
     }
 
     // 2. POST: Crear Tarea
@@ -59,9 +59,9 @@ public class TaskController {
         })
     @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<Task> create(@RequestBody Task task, Principal principal) {
-        User user = userService.findByUsername(principal.getName());
-        return new ResponseEntity<>(taskService.createTask(task, user), HttpStatus.CREATED);
+    public ResponseEntity<Task> create(@RequestBody Task task) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return new ResponseEntity<>(taskService.createTask(task, username), HttpStatus.CREATED);
     }
 
     // 3. DELETE: Borrar (Dueño o ADMIN)
@@ -79,8 +79,8 @@ public class TaskController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@Parameter(description = "ID de la tarea a eliminar", required = true, example = "101")
     @PathVariable Long id, Principal principal) {
-        User user = userService.findByUsername(principal.getName());
-        taskService.deleteTask(id, user);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        taskService.deleteTask(id, username);
         return ResponseEntity.noContent().build();
     }
     
@@ -99,11 +99,10 @@ public class TaskController {
     public ResponseEntity<Task> updateTask(
     @Parameter(description = "ID de la tarea a modificar", required = true, example = "101")
     @PathVariable Long id, @RequestBody Task taskDetails, Principal principal) {
-        User currentUser = userService.findByUsername(principal.getName()); 
-        Task updatedTask = taskService.updateTask(id, taskDetails, currentUser);
-        return ResponseEntity.ok(updatedTask);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        taskService.deleteTask(id, username);
+        return ResponseEntity.noContent().build();
     }
-    
     // 5. Dashboard de Prioridades
     @Operation(
         summary = "Dashboard de prioridades",
@@ -114,9 +113,23 @@ public class TaskController {
             @ApiResponse(responseCode = "401", description = "No autorizado")
         })
     @PreAuthorize("hasAnyAuthority('USER', 'GESTOR', 'ADMIN')")
-    @GetMapping("/dashboard/priority")
-    public ResponseEntity<PriorityGroupDTO> getPriorityDashboard() {
-        PriorityGroupDTO dashboard = taskService.getTasksByPriorityDashboard();
-        return ResponseEntity.ok(dashboard);
+    @GetMapping("/dashboard")
+    public ResponseEntity<PriorityGroupDTO> getDashboard() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.getTasksByPriorityDashboard(username));
+    }
+    
+    @Operation(summary = "Añadir etiqueta a mi tarea")
+    @PostMapping("/{taskId}/tags/{tagId}")
+    public ResponseEntity<Task> addTag(@Parameter(description = "ID de la etiqueta a añadir", required = true, example = "10")@PathVariable Long taskId, @PathVariable Long tagId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.addTagToTask(taskId, tagId, username));
+    }
+
+    @Operation(summary = "Quitar etiqueta de mi tarea")
+    @DeleteMapping("/{taskId}/tags/{tagId}")
+    public ResponseEntity<Task> removeTag(@Parameter(description = "ID de la etiqueta a eliminar", required = true, example = "10") @PathVariable Long taskId, @PathVariable Long tagId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.removeTagFromTask(taskId, tagId, username));
     }
 }

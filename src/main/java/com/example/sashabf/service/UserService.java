@@ -8,6 +8,7 @@ import com.example.sashabf.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.BeanDefinitionDsl.Role;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -46,35 +47,53 @@ public class UserService {
     }
     
     //2. Editar usuario
-    public User updateUser(Long id, User userDetails, User currentUser) {
-        // 1. Buscar el usuario existente
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
+    public User updateUser(Long id, User userDetails, User ignored) {
+        // 1. Obtener el username de la sesión actual
+        String currentUsername = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication().getName();
+        
+        System.out.println("--- DEBUG INICIO ---");
+        System.out.println("Usuario autenticado: [" + currentUsername + "]");
 
-        // 2. Seguridad: Un usuario solo puede editarse a sí mismo, a menos que sea ADMIN
-        if (currentUser.getRole() != UserRole.ADMIN && !user.getId().equals(currentUser.getId())) {
+        // 2. Buscar el usuario que está operando
+        User currentUser = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new BadRequestException("No se encontró el usuario de la sesión: " + currentUsername));
+
+        // 3. Buscar el usuario que se quiere editar (el de la URL)
+        User userToEdit = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No existe el usuario con ID: " + id));
+
+        // 4. LOGS DE COMPARACIÓN
+        System.out.println("ID en Sesión: " + currentUser.getId() + " | ID a Editar: " + userToEdit.getId());
+        System.out.println("Rol del que opera: " + currentUser.getRole());
+
+        // 5. LÓGICA DE SEGURIDAD
+        boolean isAdmin = currentUser.getRole() == UserRole.ADMIN;
+        boolean isOwner = currentUser.getId().longValue() == userToEdit.getId().longValue();
+
+        if (!isAdmin && !isOwner) {
+            System.out.println("!!! BLOQUEO: Ni Admin ni Dueño");
             throw new BadRequestException("No tienes permiso para editar este perfil.");
         }
 
-        // 3. Actualizar campos básicos
-        user.setFullname(userDetails.getFullname());
-        user.setEmail(userDetails.getEmail());
-        user.setUsername(userDetails.getUsername());
+        // 6. ACTUALIZAR CAMPOS
+        userToEdit.setFullname(userDetails.getFullname());
+        userToEdit.setEmail(userDetails.getEmail());
+        userToEdit.setUsername(userDetails.getUsername());
 
-        // 4. Lógica de Contraseña: Solo se actualiza si viene una nueva
-        if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
-            // Ciframos la nueva contraseña antes de guardar
-            user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+        // 7. CONTRASEÑA (Solo si se envía una nueva y no es el "string" por defecto)
+        if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty() && !userDetails.getPassword().equals("string")) {
+            userToEdit.setPassword(passwordEncoder.encode(userDetails.getPassword()));
         }
 
-        // 5. Lógica de Rol: Solo un ADMIN puede cambiar roles
-        if (currentUser.getRole() == UserRole.ADMIN && userDetails.getRole() != null) {
-            user.setRole(userDetails.getRole());
+        // 8. ROL (Solo el ADMIN puede cambiar roles)
+        if (isAdmin && userDetails.getRole() != null) {
+            userToEdit.setRole(userDetails.getRole());
         }
 
-        return userRepository.save(user);
+        System.out.println("--- UPDATE EXITOSO ---");
+        return userRepository.save(userToEdit);
     }
-
     //3.  Buscar por nombre de usuario (útil para el login)
  
     public User findByUsername(String username) {

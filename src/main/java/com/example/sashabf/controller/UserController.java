@@ -80,10 +80,10 @@ public class UserController {
             return ResponseEntity.noContent().build();
         }
         
-        // 4. Editar (Solo ADMIN)
+        // 4. Editar 
         @Operation(
             summary = "Actualizar perfil de usuario",
-            description = "Permite modificar los datos de un usuario existente. Requiere rol ADMIN."
+            description = "Permite modificar los datos de un usuario existente. Requiere rol ADMIN o ser el usuario en cuestión."
         )
         @ApiResponses(value = {
         		@ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente"),
@@ -91,7 +91,7 @@ public class UserController {
                 @ApiResponse(responseCode = "403", description = "Prohibido: Solo un ADMIN puede borrar usuarios"),
                 @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
             })
-        @PreAuthorize("hasAuthority('ADMIN')")
+       
         @PutMapping("/{id}")
         public ResponseEntity<User> update(@Parameter(description = "ID del usuario a modificar", required = true, example = "2")
             @PathVariable Long id, 

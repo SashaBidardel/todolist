@@ -6,6 +6,7 @@ import java.util.Optional;
 
 public interface TagRepository extends JpaRepository<Tag, Long> {
     
-    // Este método es clave para la lógica de "si ya existe, lanzar excepción"
+  
     Optional<Tag> findByName(String name);
+    boolean existsByName(String name);
 }

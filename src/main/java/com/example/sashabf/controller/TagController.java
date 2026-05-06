@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,8 +43,11 @@ public class TagController {
     @PreAuthorize("hasAnyAuthority('USER', 'ADMIN', 'GESTOR')")
     @PostMapping
     public ResponseEntity<Tag> create(@RequestBody Tag tag) {
-        Tag newTag = tagService.createTag(tag.getName());
-        return new ResponseEntity<>(newTag, HttpStatus.CREATED);
+        // Obtenemos el nombre del que está sentado al teclado
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // Se lo pasamos al service 
+        return new ResponseEntity<>(tagService.createTag(tag.getName(), username), HttpStatus.CREATED);
     }
 
     // 2. GET: Listar todos
@@ -65,7 +69,7 @@ public class TagController {
     // 3. PUT: Editar Tag
     @Operation(
         summary = "Actualizar etiqueta",
-        description = "Modifica una etiqueta existente. El servicio validará si el usuario tiene permiso."
+        description = "Modifica una etiqueta existente. El servicio validará si el usuario tiene permiso(Admin o el propio usuario."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Etiqueta actualizada correctamente"),
@@ -74,21 +78,17 @@ public class TagController {
             @ApiResponse(responseCode = "404", description = "La etiqueta no existe")
         })
     @PreAuthorize("isAuthenticated()")
+   
     @PutMapping("/{id}")
-    public ResponseEntity<Tag> update(
-    	@Parameter(description = "ID único de la etiqueta", required = true, example = "10")
-        @PathVariable Long id, 
-        @RequestBody Tag tag, 
-        @AuthenticationPrincipal User user
-    ) throws ForbiddenException {
-        Tag updatedTag = tagService.updateTag(id, tag, user);
-        return ResponseEntity.ok(updatedTag);
+    public ResponseEntity<Tag> update(@PathVariable Long id, @RequestBody Tag tag) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Tag updated = tagService.updateTag(id, tag.getName(), username);
+        return ResponseEntity.ok(updated);
     }
-
     // 4. DELETE: Borrar Tag
     @Operation(
         summary = "Eliminar etiqueta",
-        description = "Borra una etiqueta por su ID. Solo permitido si el usuario es dueño o tiene rango superior."
+        description = "Borra una etiqueta por su ID. Solo permitido si el usuario es dueño."
     )@ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Etiqueta eliminada con éxito"),
             @ApiResponse(responseCode = "403", description = "Prohibido: No eres el dueño de esta etiqueta"),
@@ -96,12 +96,9 @@ public class TagController {
         })
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
-        @Parameter(description = "ID de la etiqueta a borrar", required = true, example = "10")
-        @PathVariable Long id, 
-        @AuthenticationPrincipal User user
-    ) throws ForbiddenException {
-        tagService.deleteTag(id, user);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        tagService.deleteTag(id, username);
         return ResponseEntity.noContent().build();
     }
     
@@ -116,8 +113,9 @@ public class TagController {
             @ApiResponse(responseCode = "404", description = "No se encontró ninguna etiqueta con ese nombre")
         })
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{name}/tasks")
+    @GetMapping("/tasks/{name}")
     public ResponseEntity<List<Task>> getTasksByTag(@PathVariable String name) {
+        // Como pediste ver TODAS las tareas con ese tag, no filtramos por username aquí
         List<Task> tasks = tagService.getTasksByTagName(name);
         return ResponseEntity.ok(tasks);
     }

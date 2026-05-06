@@ -8,6 +8,8 @@ import com.example.sashabf.model.Task;
 import com.example.sashabf.model.User;
 import com.example.sashabf.model.UserRole;
 import com.example.sashabf.repository.TagRepository;
+import com.example.sashabf.repository.TaskRepository;
+import com.example.sashabf.repository.UserRepository;
 
 import lombok.Builder;
 
@@ -23,20 +25,22 @@ public class TagService {
 
     @Autowired
 	private TagRepository tagRepository;
-
+    @Autowired
+	private UserRepository userRepository;
+    @Autowired
+   	private TaskRepository taskRepository;
    
     // 1. Crear tag
-    public Tag createTag(String name) {
-        String cleanName = name.trim().toLowerCase();
-        
-        // Comprobamos si ya existe
-        if (tagRepository.findByName(cleanName).isPresent()) {
-            throw new BadRequestException("La etiqueta '" + cleanName + "' ya existe y es de uso global.");
-        }
-        
+    public Tag createTag(String name, String username) {
+        // 1. Buscamos al usuario (para tener su ID)
+        User user = userRepository.findByUsername(username).get(); 
+
+        // 2. Creamos el Tag y le asignamos ese usuario
         Tag tag = new Tag();
-        tag.setName(name);      
-        tag.setTasks(new ArrayList<>());      
+        tag.setName(name);
+        tag.setAuthor(user); // <--- Esto es lo que rellena el user_id en la BD
+
+        // 3. Guardamos
         return tagRepository.save(tag);
     }
     public void addTaskToTag(Long tagId, Task task) {
@@ -57,48 +61,50 @@ public class TagService {
         return tagRepository.findAll();
     }
     
-   //3. BORRAR
-    public void deleteTag(Long id, User currentUser) throws ForbiddenException {
+   //3. ACTUALIZAR TAG
+    public Tag updateTag(Long id, String newName, String username) {
         Tag tag = tagRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado"));
 
-        // Validación autor
-        if (!tag.getAuthor().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("Acceso denegado: Solo el creador del Tag puede eliminarlo.");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // Solo el dueño o un ADMIN pueden editar
+        if (user.getRole() != UserRole.ADMIN && !tag.getAuthor().getId().equals(user.getId())) {
+            throw new BadRequestException("No puedes editar tags de otros usuarios");
         }
 
-        // Limpieza de la relación Many-to-Many
-        for (Task task : tag.getTasks()) {
-            task.getTags().remove(tag);
-        }
-        
-        tagRepository.delete(tag);
-    }
-    //4 EDITAR
-    public Tag updateTag(Long id, Tag tagDetails, User currentUser) throws ForbiddenException {
-        // 1. Buscamos el tag en la base de datos
-        Tag tag = tagRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado con ID: " + id));
-
-        // 2. PRIVACIDAD TOTAL: Solo el autor puede editarlo
-        // Comparamos el ID del autor del tag con el ID del usuario que hace la petición
-        if (!tag.getAuthor().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("No tienes permiso para editar este Tag, ya que no eres su creador.");
-        }
-
-        // 3. Actualizamos solo el nombre 
-        tag.setName(tagDetails.getName());
-
-        // 4. Guardamos los cambios
+        tag.setName(newName);
         return tagRepository.save(tag);
     }
-    
-    // 5. Buscar tareas con tags asignados
-    public List<Task> getTasksByTagName(String name) {
-        Tag tag = tagRepository.findByName(name)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado: " + name));
-        
-        return tag.getTasks();
+
+    //4. BORRAR TAG
+    public void deleteTag(Long id, String username) {
+        Tag tag = tagRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado"));
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // Solo el dueño o un ADMIN pueden borrar
+        if (user.getRole() != UserRole.ADMIN && !tag.getAuthor().getId().equals(user.getId())) {
+            throw new BadRequestException("No puedes borrar tags de otros usuarios");
+        }
+
+        tagRepository.delete(tag);
     }
     
+    //5. Buscar las tareas de un tag
+    public List<Task> getTasksByTagName(String name) {
+        // 1. Validamos si el tag existe (opcional, pero recomendado)
+        if (!tagRepository.existsByName(name)) {
+            throw new ResourceNotFoundException("Tag no encontrado: " + name);
+        }
+        
+        // 2. Buscamos todas las tareas que contienen ese tag por su nombre
+        return taskRepository.findByTags_Name(name);
+    }
 }
+    
+    
+

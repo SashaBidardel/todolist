@@ -11,6 +11,8 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @Entity
 @Table(name = "tasks")
 @Getter @Setter
@@ -18,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 public class Task {
 
-    @Id
+    @Id  @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -44,18 +46,19 @@ public class Task {
     @Column(nullable = false)
     private boolean important = false; // Por defecto no es destacada
     // -------------------------------------
-
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     private User author; // Relación 1 a muchos con User 
-
+    
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonIgnoreProperties("tasks")
     private Category category; // Relación 1 a muchos con Category
 
-    @ManyToMany
+    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
         name = "task_tags",
         joinColumns = @JoinColumn(name = "task_id"),

@@ -20,5 +20,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByAuthorAndCompleted(User author, boolean completed);
     // Bucamos las tareas que tienen una determina categoría
     List<Task> findByCategoryId(Long id);
+
+	List<Task> findByTags_Name(String name);
+	boolean existsByTitleAndAuthor_Username(String title,User username);
     
 }

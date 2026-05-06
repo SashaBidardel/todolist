@@ -14,6 +14,7 @@ import com.example.sashabf.model.UserRole;
 import com.example.sashabf.repository.CategoryRepository;
 import com.example.sashabf.repository.TagRepository;
 import com.example.sashabf.repository.TaskRepository;
+import com.example.sashabf.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,153 +30,140 @@ public class TaskService {
     private TagRepository tagRepository;
     @Autowired
     private CategoryRepository categoryRepository;
-    //1. Crear tarea
-    public Task createTask(Task task, User author) {
-        task.setAuthor(author);
-        
-        // Si la tarea no trae categoría, buscamos la "General"
-        if (task.getCategory() == null) {
-            Category general = categoryRepository.findByTitle("General")
-                .orElseThrow(() -> new ResourceNotFoundException("Error crítico: La categoría por defecto 'General' no existe."));
-            task.setCategory(general);
+    @Autowired
+    private UserRepository userRepository;
+    
+ // 1. CREAR TAREA
+    public Task createTask(Task task, String username) {
+        User currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        // Validación de duplicados por título para el mismo usuario
+        if (taskRepository.existsByTitleAndAuthor_Username(task.getTitle(), currentUser)) {
+            throw new BadRequestException("Ya tienes una tarea llamada: " + task.getTitle());
         }
-        
+
+        // Procesar Tags
+        if (task.getTags() != null) {
+            List<Tag> processedTags = task.getTags().stream().map(t -> {
+                return tagRepository.findByName(t.getName())
+                    .orElseGet(() -> {
+                        Tag newTag = new Tag();
+                        newTag.setName(t.getName());
+                        newTag.setAuthor(currentUser);
+                        return tagRepository.save(newTag);
+                    });
+            }).collect(Collectors.toList());
+            task.setTags(processedTags);
+        }
+
+        task.setAuthor(currentUser);
         return taskRepository.save(task);
     }
-    //2. Editar tarea
-    public Task updateTask(Long id, Task taskDetails, User author) {
-        // 1. Buscar la tarea original
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("La tarea con ID " + id + " no existe."));
 
-        // 2. Seguridad: Solo el dueño edita
-        if ( !task.getAuthor().getId().equals(author.getId())) {
+    // 2. EDITAR TAREA
+    public Task updateTask(Long id, Task taskDetails, String username) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("La tarea no existe."));
+
+        User user = userRepository.findByUsername(username).get();
+
+        // SEGURIDAD: Solo el dueño puede editar 
+        if (!task.getAuthor().getId().equals(user.getId())) {
             throw new RuntimeException("No tienes permiso para editar esta tarea.");
         }
 
-        // 3. Actualizamos los campos de texto y estado
         task.setTitle(taskDetails.getTitle());
         task.setDescription(taskDetails.getDescription());
         task.setCompleted(taskDetails.isCompleted());
         task.setDeadline(taskDetails.getDeadline());
         task.setPriority(taskDetails.getPriority());
 
-        // 4. Lógica de Tags con List
         if (taskDetails.getTags() != null) {
-            List<Tag> verifiedTags = new java.util.ArrayList<>();
-            for (Tag tag : taskDetails.getTags()) {
-                // Buscamos cada tag por ID para asegurar que existe en el catálogo
-                Tag existingTag = tagRepository.findById(tag.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("El Tag con ID " + tag.getId() + " no existe."));
-                verifiedTags.add(existingTag);
-            }
-            task.setTags(verifiedTags); // Hibernate limpia la tabla intermedia y la rellena de nuevo
+            List<Tag> verifiedTags = taskDetails.getTags().stream()
+                .map(t -> tagRepository.findByName(t.getName())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado: " + t.getName())))
+                .collect(Collectors.toList());
+            task.setTags(verifiedTags);
         }
 
         return taskRepository.save(task);
     }
-    
-    //3.  Obtener tareas según el rol (ADMIN ve todo, USER solo lo suyo)
-    public List<Task> getTasksByUser(User author) {
-        List<Task> tasks;
-        if (author.getRole() == UserRole.ADMIN) {
-            tasks = taskRepository.findAll();
-        } else {
-            tasks = taskRepository.findByAuthor(author);
-        }
 
-        //Lanzar excepción si no hay tareas 
+    // 3. OBTENER TAREAS (Solo las del autor)
+    public List<Task> getTasksByUser(String username) {
+        User user = userRepository.findByUsername(username).get();
+        
+        
+        List<Task> tasks = taskRepository.findByAuthor(user);
+
         if (tasks.isEmpty()) {
             throw new ResourceNotFoundException("No se encontraron tareas para este usuario.");
         }
         return tasks;
     }
-    
-    //4. BORRAR
-    public void deleteTask(Long id, User currentUser) {
+
+    // 4. BORRAR TAREA
+    public void deleteTask(Long id, String username) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada."));
 
-        if (!task.getAuthor().getId().equals(currentUser.getId())) {
+        User user = userRepository.findByUsername(username).get();
+
+        if (!task.getAuthor().getId().equals(user.getId())) {
             throw new RuntimeException("No puedes borrar una tarea que no es tuya.");
         }
 
         taskRepository.delete(task);
     }
-    
-    // 5. Añadir Tag a Tarea
-    public Task addTagToTask(Long taskId, Long tagId, User currentUser) throws ForbiddenException {
-        // 1. Buscar la tarea y el tag
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
-        
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado"));
 
-        // 2. VALIDACIÓN: Solo el dueño de la tarea puede modificarla
-        if (!task.getAuthor().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("No puedes añadir etiquetas a una tarea que no te pertenece.");
-        }
+    // 5. DASHBOARD POR PRIORIDAD (Privado)
+    public PriorityGroupDTO getTasksByPriorityDashboard(String username) {
+        User user = userRepository.findByUsername(username).get();
+        List<Task> myTasks = taskRepository.findByAuthor(user);
 
-        // 3. Lógica de negocio: Añadir si no lo tiene ya
-        if (!task.getTags().contains(tag)) {
-            task.getTags().add(tag);
-        }
-
-        return taskRepository.save(task);
-    }
-    
-    // 6. Eliminar Tag a Tarea
-    public Task removeTagFromTask(Long taskId, Long tagId, User currentUser) throws ForbiddenException {
-        // 1. Buscar la tarea y el tag
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
-        
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado"));
-
-        // 2. VALIDACIÓN: Solo el dueño de la tarea puede modificarla
-        if (!task.getAuthor().getId().equals(currentUser.getId())) {
-            throw new ForbiddenException("No puedes quitar etiquetas de una tarea que no te pertenece.");
-        }
-
-        // 3. Lógica de negocio: Quitar el tag de la colección
-        task.getTags().remove(tag);
-
-        return taskRepository.save(task);
-    }
-    
-    /**
-     * Genera la información para el Dashboard agrupando las tareas por prioridad.
-     * No requiere usuario, devuelve todas las tareas accesibles.
-     */
-    public PriorityGroupDTO getTasksByPriorityDashboard() {
-        // 1. Obtenemos todas las tareas de la base de datos
-        List<Task> allTasks = taskRepository.findAll();
-
-        // 2. Creamos el contenedor DTO
         PriorityGroupDTO dashboard = new PriorityGroupDTO();
-
-        // 3. Mapeamos cada lista filtrando por su enumerado de prioridad
-        dashboard.setLow(filterAndMap(allTasks, Priority.LOW));
-        dashboard.setMedium(filterAndMap(allTasks, Priority.MEDIUM));
-        dashboard.setHigh(filterAndMap(allTasks, Priority.HIGH));
+        dashboard.setLow(filterAndMap(myTasks, Priority.LOW));
+        dashboard.setMedium(filterAndMap(myTasks, Priority.MEDIUM));
+        dashboard.setHigh(filterAndMap(myTasks, Priority.HIGH));
 
         return dashboard;
     }
 
-    /**
-     * Método privado auxiliar para evitar repetir la lógica de filtrado y conversión.
-     */
+    // 6. GESTIÓN DE TAGS INDIVIDUALES
+    public Task addTagToTask(Long taskId, Long tagId, String username) {
+        Task task = taskRepository.findById(taskId).orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        Tag tag = tagRepository.findById(tagId).orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado"));
+        User user = userRepository.findByUsername(username).get();
+
+        if (!task.getAuthor().getId().equals(user.getId())) {
+            throw new RuntimeException("No tienes permiso.");
+        }
+
+        if (!task.getTags().contains(tag)) {
+            task.getTags().add(tag);
+        }
+        return taskRepository.save(task);
+    }
+
+    public Task removeTagFromTask(Long taskId, Long tagId, String username) {
+        Task task = taskRepository.findById(taskId).orElseThrow(() -> new ResourceNotFoundException("Tarea no encontrada"));
+        Tag tag = tagRepository.findById(tagId).orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado"));
+        User user = userRepository.findByUsername(username).get();
+
+        if (!task.getAuthor().getId().equals(user.getId())) {
+            throw new RuntimeException("No tienes permiso.");
+        }
+
+        task.getTags().remove(tag);
+        return taskRepository.save(task);
+    }
+
+    // AUXILIAR DASHBOARD
     private List<TaskDashboardDTO> filterAndMap(List<Task> tasks, Priority priority) {
         return tasks.stream()
                 .filter(t -> t.getPriority() == priority)
-                .map(t -> new TaskDashboardDTO(
-                        t.getId(),
-                        t.getTitle(),
-                        t.getPriority()
-                ))
+                .map(t -> new TaskDashboardDTO(t.getId(), t.getTitle(), t.getPriority()))
                 .collect(Collectors.toList());
     }
 }
-
