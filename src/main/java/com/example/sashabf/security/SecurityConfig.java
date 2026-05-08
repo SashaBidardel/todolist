@@ -34,8 +34,8 @@ public class SecurityConfig {
                 // 2. USUARIOS (ADMIN): Listado, borrado y roles
                 .requestMatchers(HttpMethod.GET, "/api/users").hasAuthority("ADMIN") 
                 .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAuthority("ADMIN")
-                //.requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyAuthority("ADMIN", "USER","GESTOR")
-                .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyAuthority("ADMIN", "USER","GESTOR")
+                //.requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/users/*/promote", "/api/users/*/demote").hasAuthority("ADMIN")
 
                 // 3. CATEGORÍAS: 
