@@ -4,6 +4,8 @@ package com.example.sashabf.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -31,12 +33,12 @@ public class Task {
     private String description;
 
     private boolean completed = false;
-
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     //ATRIBUTOS EXTRA 
-    private LocalDateTime deadline; // Fecha límite 
+    private LocalDate deadline; // Fecha límite 
     
     @Enumerated(EnumType.STRING)
     private Priority priority; // Nivel de prioridad 
@@ -58,6 +60,7 @@ public class Task {
     @JsonIgnoreProperties("tasks")
     private Category category; // Relación 1 a muchos con Category
 
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
         name = "task_tags",
@@ -68,6 +71,6 @@ public class Task {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = LocalDate.now();
     }
 }

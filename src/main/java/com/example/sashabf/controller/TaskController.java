@@ -1,6 +1,7 @@
 package com.example.sashabf.controller;
 
 import com.example.sashabf.DTO.PriorityGroupDTO;
+import com.example.sashabf.model.Priority;
 import com.example.sashabf.model.Task;
 import com.example.sashabf.model.User;
 import com.example.sashabf.service.TaskService;
@@ -19,6 +20,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -118,18 +121,78 @@ public class TaskController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(taskService.getTasksByPriorityDashboard(username));
     }
-    
+    // 6. Añadir Tag a una Tarea
     @Operation(summary = "Añadir etiqueta a mi tarea")
     @PostMapping("/{taskId}/tags/{tagId}")
     public ResponseEntity<Task> addTag(@Parameter(description = "ID de la etiqueta a añadir", required = true, example = "10")@PathVariable Long taskId, @PathVariable Long tagId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(taskService.addTagToTask(taskId, tagId, username));
     }
-
+    
+    // 7. Eliminar Tag a una Tarea
     @Operation(summary = "Quitar etiqueta de mi tarea")
     @DeleteMapping("/{taskId}/tags/{tagId}")
     public ResponseEntity<Task> removeTag(@Parameter(description = "ID de la etiqueta a eliminar", required = true, example = "10") @PathVariable Long taskId, @PathVariable Long tagId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(taskService.removeTagFromTask(taskId, tagId, username));
+    }
+    
+    // 8. Buscar Tarea por título
+    @Operation(summary = "Obtener tareas por título", description = "Busca tareas cuyo título contenga la cadena proporcionada. No distingue entre mayúsculas y minúsculas.")
+    @GetMapping("/search/title")
+    public ResponseEntity<List<Task>> searchByTitle(
+        @Parameter(description = "Parte del título a buscar", example = "comprar", required = true) 
+        @RequestParam String title
+    ) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.searchByTitle(title, username));
+    }
+    
+    //9. Obtener tareas completadas
+    @Operation(summary = "Listar tareas completadas", description = "Retorna todas las tareas del usuario que ya han sido marcadas como terminadas.")
+    @GetMapping("/completed")
+    public ResponseEntity<List<Task>> getCompletedTasks() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.getTasksByStatus(true, username));
+    }
+
+    // 10. Obtener la prioridad de una tarea específica
+    @Operation(summary = "Obtener prioridad de la tarea", description = "Retorna el nivel de prioridad de una tarea concreta.")
+    @GetMapping("/{id}/priority")
+    public ResponseEntity<Priority> getTaskPriority(
+        @Parameter(description = "ID de la tarea", example = "1") @PathVariable Long id
+    ) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.getTaskPriority(id, username));
+    }
+
+    // 11. Obtener la importancia de una tarea específica
+    @Operation(summary = "Obtener importancia de la tarea", description = "Retorna si una tarea concreta es importante o no.")
+    @GetMapping("/{id}/important")
+    public ResponseEntity<Boolean> getTaskImportance(
+        @Parameter(description = "ID de la tarea", example = "1") @PathVariable Long id
+    ) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.getTaskImportance(id, username));
+    }
+    
+    //12. Obtener fecha límite de una tarea
+    @Operation(summary = "Obtener fecha límite de una tarea", description = "Retorna el LocalDateTime de la fecha límite de una tarea específica.")
+    @GetMapping("/{id}/deadline")
+    public ResponseEntity<LocalDate> getTaskDeadline(
+        @Parameter(description = "ID de la tarea", example = "1") @PathVariable Long id
+    ) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.getTaskDeadline(id, username));
+    }
+    
+    //13. Obtener tiempo estimado de una tarea
+    @Operation(summary = "Obtener tiempo estimado de una tarea", description = "Retorna el String con el tiempo estimado de una tarea específica.")
+    @GetMapping("/{id}/estimated-time")
+    public ResponseEntity<String> getTaskEstimatedTime(
+        @Parameter(description = "ID de la tarea", example = "1") @PathVariable Long id
+    ) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(taskService.getTaskEstimatedTime(id, username));
     }
 }

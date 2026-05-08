@@ -104,7 +104,7 @@ public class TagController {
     
     // 5. GET2: Tareas por Tag
     @Operation(
-        summary = "Listar tareas por etiqueta",
+        summary = "Buscar tareas con un tag concreto.",
         description = "Busca todas las tareas asociadas a una etiqueta específica mediante su nombre."
     )
     @ApiResponses(value = {

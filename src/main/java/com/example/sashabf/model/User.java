@@ -35,7 +35,8 @@ public class User {
     private String email;
 
     private String fullname;
-
+    
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @Enumerated(EnumType.STRING)
     private UserRole role; // USER o ADMIN
     
