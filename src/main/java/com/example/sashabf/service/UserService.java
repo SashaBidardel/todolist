@@ -47,7 +47,7 @@ public class UserService {
     }
     
     //2. Editar usuario
-    public User updateUser(Long id, User userDetails, User ignored) {
+    public User updateUser(Long id, User userDetails) {
         // 1. Obtener el username de la sesión actual
         String currentUsername = org.springframework.security.core.context.SecurityContextHolder
                 .getContext().getAuthentication().getName();

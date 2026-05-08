@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -96,33 +97,13 @@ public class UserController {
         public ResponseEntity<User> update(@Parameter(description = "ID del usuario a modificar", required = true, example = "2")
             @PathVariable Long id, 
             @RequestBody User user, 
-            @AuthenticationPrincipal User currentUser 
+            @AuthenticationPrincipal UserDetails currentUserDetails
         ) {
-            User updatedUser = userService.updateUser(id, user, currentUser);
+        	User updatedUser = userService.updateUser(id, user);
             return ResponseEntity.ok(updatedUser);
         }
 
-        // 5. Cambiar contraseña (Cualquier usuario logueado)
-        @Operation(
-            summary = "Cambiar contraseña personal",
-            description = "Permite al usuario autenticado cambiar su propia contraseña."
-        )
-        @ApiResponses(value = {
-                @ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente"),
-                @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
-                @ApiResponse(responseCode = "401", description = "No autenticado"),
-                @ApiResponse(responseCode = "403", description = "Prohibido: No tienes permisos de administrador"),
-                @ApiResponse(responseCode = "404", description = "El usuario que intentas editar no existe")
-            })
-        @PreAuthorize("isAuthenticated()") // Basta con estar logueado
-        @PatchMapping("/me/password")
-        public ResponseEntity<String> changePassword(
-            @RequestBody String newPassword, 
-            @AuthenticationPrincipal User currentUser
-        ) {
-            userService.changePassword(newPassword, currentUser);
-            return ResponseEntity.ok("Contraseña actualizada con éxito");
-        }
+       
     
     @Operation(
             summary = "Promocionar a Gestor", 
