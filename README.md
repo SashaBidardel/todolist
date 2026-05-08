@@ -66,9 +66,11 @@ La API cuenta con documentación profesional accesible en:
 *   **@Parameter:** Documentación de parámetros de entrada y obligatoriedad.
 *   **Resolución de Conflictos:** Se ha resuelto la colisión entre la entidad `Tag` y la anotación de Swagger mediante nombres cualificados.
 
-## User Admin
+## User Admin y User usuario1
  username: admin
  password: 1234
+ username: usuario1
+ password: usuario1
 
 ## ⚙️ Tecnologías Utilizadas
 *   **Framework:** Spring Boot 3.4
