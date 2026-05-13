@@ -30,7 +30,7 @@ public class Tag {
     private User author; // El creador del tag
     
     @Schema(example = "Nombre Etiqueta")
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name;
     
     

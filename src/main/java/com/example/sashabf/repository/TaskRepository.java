@@ -4,6 +4,7 @@ package com.example.sashabf.repository;
 
 import com.example.sashabf.model.Category;
 import com.example.sashabf.model.Priority;
+import com.example.sashabf.model.Tag;
 import com.example.sashabf.model.Task;
 import com.example.sashabf.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,6 +36,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 	    
 	// Buscar por importancia
 	List<Task> findByAuthorAndImportant(User author, boolean important);
+
+	List<Task> findByTagsContainingAndAuthor(Tag tag, User author);
 	
     
 }

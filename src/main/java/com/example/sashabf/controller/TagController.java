@@ -1,5 +1,6 @@
 package com.example.sashabf.controller;
 
+import com.example.sashabf.exception.BadRequestException;
 import com.example.sashabf.exception.ForbiddenException;
 import com.example.sashabf.model.Tag;
 import com.example.sashabf.model.Task;
@@ -21,7 +22,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tags")
-@io.swagger.v3.oas.annotations.tags.Tag(name = "Etiquetas", description = "Gestión de etiquetas colaborativas")//hay colisión de nombres con la clase
+// Resolvemos la colisión usando la ruta completa aquí para mantener los imports limpios
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Etiquetas", description = "Gestión de etiquetas personales para tareas")
 public class TagController {
 
     private final TagService tagService;
@@ -33,90 +35,75 @@ public class TagController {
     // 1. POST: Crear Tag
     @Operation(
         summary = "Crear nueva etiqueta",
-        description = "Añade una etiqueta al sistema. Disponible para usuarios registrados y administradores."
+        description = "Añade una etiqueta privada al catálogo del usuario. Solo disponible para USER y GESTOR."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Etiqueta creada con éxito"),
-            @ApiResponse(responseCode = "400", description = "El nombre de la etiqueta no es válido"),
-            @ApiResponse(responseCode = "401", description = "No autorizado: Debes iniciar sesión")
+            @ApiResponse(responseCode = "400", description = "Nombre inválido o duplicado"),
+            @ApiResponse(responseCode = "401", description = "No autorizado"),
+            @ApiResponse(responseCode = "403", description = "Los ADMIN no pueden crear etiquetas")
         })
-    @PreAuthorize("hasAnyAuthority('USER', 'ADMIN', 'GESTOR')")
+    @PreAuthorize("hasAnyAuthority('USER', 'GESTOR')") // Coherente con el Service
     @PostMapping
     public ResponseEntity<Tag> create(@RequestBody Tag tag) {
-        // Obtenemos el nombre del que está sentado al teclado
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // Se lo pasamos al service 
-        return new ResponseEntity<>(tagService.createTag(tag.getName(), username), HttpStatus.CREATED);
+        String username = getAuthenticatedUsername();
+        Tag createdTag = tagService.createTag(tag, username);
+        return new ResponseEntity<>(createdTag, HttpStatus.CREATED);
     }
 
-    // 2. GET: Listar todos
+    // 2. GET: Listar etiquetas del usuario
     @Operation(
-        summary = "Listar todas las etiquetas",
-        description = "Recupera todas las etiquetas disponibles en la base de datos."
+        summary = "Listar mis etiquetas",
+        description = "Recupera las etiquetas creadas por el usuario autenticado."
     )
-    
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista obtenida correctamente"),
             @ApiResponse(responseCode = "401", description = "No autorizado")
         })
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyAuthority('USER', 'GESTOR')")
     @GetMapping
-    public ResponseEntity<List<Tag>> getAll() {
-        return ResponseEntity.ok(tagService.getAllTags());
+    public ResponseEntity<List<Tag>> getMyTags() {
+        List<Tag> tags = tagService.getUserTags(getAuthenticatedUsername());
+        return ResponseEntity.ok(tags);
     }
-    
+
     // 3. PUT: Editar Tag
-    @Operation(
-        summary = "Actualizar etiqueta",
-        description = "Modifica una etiqueta existente. El servicio validará si el usuario tiene permiso(Admin o el propio usuario."
-    )
+    @Operation(summary = "Actualizar etiqueta", description = "Modifica una etiqueta si eres el autor.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Etiqueta actualizada correctamente"),
-            @ApiResponse(responseCode = "401", description = "No autorizado"),
-            @ApiResponse(responseCode = "403", description = "Prohibido: No tienes permiso para editar esta etiqueta"),
-            @ApiResponse(responseCode = "404", description = "La etiqueta no existe")
+            @ApiResponse(responseCode = "200", description = "Actualizada"),
+            @ApiResponse(responseCode = "403", description = "No eres el autor"),
+            @ApiResponse(responseCode = "404", description = "No existe")
         })
-    @PreAuthorize("isAuthenticated()")
-   
+    @PreAuthorize("hasAnyAuthority('USER', 'GESTOR')")
     @PutMapping("/{id}")
     public ResponseEntity<Tag> update(@PathVariable Long id, @RequestBody Tag tag) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Tag updated = tagService.updateTag(id, tag.getName(), username);
+        Tag updated = tagService.updateTag(id, tag, getAuthenticatedUsername());
         return ResponseEntity.ok(updated);
     }
+
     // 4. DELETE: Borrar Tag
-    @Operation(
-        summary = "Eliminar etiqueta",
-        description = "Borra una etiqueta por su ID. Solo permitido si el usuario es dueño."
-    )@ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Etiqueta eliminada con éxito"),
-            @ApiResponse(responseCode = "403", description = "Prohibido: No eres el dueño de esta etiqueta"),
-            @ApiResponse(responseCode = "404", description = "Etiqueta no encontrada")
-        })
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Eliminar etiqueta", description = "Borra una etiqueta si eres el autor.")
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('USER', 'GESTOR')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        tagService.deleteTag(id, username);
+        tagService.deleteTag(id, getAuthenticatedUsername());
         return ResponseEntity.noContent().build();
     }
-    
-    // 5. GET2: Tareas por Tag
-    @Operation(
-        summary = "Buscar tareas con un tag concreto.",
-        description = "Busca todas las tareas asociadas a una etiqueta específica mediante su nombre."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de tareas recuperada con éxito"),
-            @ApiResponse(responseCode = "401", description = "No autorizado: Debes iniciar sesión"),
-            @ApiResponse(responseCode = "404", description = "No se encontró ninguna etiqueta con ese nombre")
-        })
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping("/tasks/{name}")
-    public ResponseEntity<List<Task>> getTasksByTag(@PathVariable String name) {
-        // Como pediste ver TODAS las tareas con ese tag, no filtramos por username aquí
-        List<Task> tasks = tagService.getTasksByTagName(name);
+
+    // 5. Tareas por etiqueta
+    @Operation(summary = "Listar tareas por etiqueta", description = "Busca tareas propias filtrando por nombre de etiqueta.")
+    @GetMapping("/tasks/{tagName}")
+    @PreAuthorize("hasAnyAuthority('USER', 'GESTOR')")
+    public ResponseEntity<List<Task>> getTasksByTag(
+            @Parameter(description = "Nombre de la etiqueta", example = "Trabajo")
+            @PathVariable String tagName) {
+        
+        List<Task> tasks = tagService.getTasksByTagName(tagName, getAuthenticatedUsername());
         return ResponseEntity.ok(tasks);
+    }
+
+    // MÉTODO PRIVADO PARA LIMPIAR EL CÓDIGO
+    private String getAuthenticatedUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }
