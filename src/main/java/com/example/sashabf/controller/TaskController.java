@@ -103,8 +103,11 @@ public class TaskController {
     @Parameter(description = "ID de la tarea a modificar", required = true, example = "101")
     @PathVariable Long id, @RequestBody Task taskDetails, Principal principal) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        taskService.deleteTask(id, username);
-        return ResponseEntity.noContent().build();
+        // Llamamos al método del SERVICE
+        Task updatedTask = taskService.updateTask(id, taskDetails, username);
+        
+        //Devolvemos la tarea actualizada con un OK
+        return ResponseEntity.ok(updatedTask);
     }
     // 5. Dashboard de Prioridades
     @Operation(
