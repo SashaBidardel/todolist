@@ -45,6 +45,7 @@ public class TaskController {
             @ApiResponse(responseCode = "401", description = "No autorizado: Debes iniciar sesión")
         })
     @PreAuthorize("isAuthenticated()")
+    @GetMapping
     public ResponseEntity<List<Task>> getAll() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(taskService.getTasksByUser(username));
