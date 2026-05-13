@@ -54,7 +54,7 @@ public class Task {
     @JsonIgnore
     private User author; // Relación 1 a muchos con User 
     
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    //@Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @ManyToOne
     @JoinColumn(name = "category_id")
     @JsonIgnoreProperties("tasks")

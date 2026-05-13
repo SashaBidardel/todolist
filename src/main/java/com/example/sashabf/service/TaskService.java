@@ -38,59 +38,80 @@ public class TaskService {
     
     // 1. CREAR TAREA
     public Task createTask(Task task, String username) {
+        // 1. Obtener el usuario autenticado
         User currentUser = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        // Validación de duplicados por título para el mismo usuario
+        // 2. Validación de duplicados: No permitir dos tareas iguales para el mismo usuario
         if (taskRepository.existsByTitleAndAuthor(task.getTitle(), currentUser)) {
             throw new BadRequestException("Ya tienes una tarea llamada: " + task.getTitle());
         }
 
-        // Procesar Tags
+        // 3. Lógica de Categoría (Basada en tu JSON)
+        if (task.getCategory() != null && task.getCategory().getTitle() != null) {
+            String catTitle = task.getCategory().getTitle();
+            // Buscamos la categoría por el nombre que viene en el JSON
+            Category existingCategory = categoryRepository.findByTitle(catTitle)
+                    .orElseThrow(() -> new ResourceNotFoundException("La categoría '" + catTitle + "' no existe. Créala primero."));
+            task.setCategory(existingCategory);
+        } else {
+            // Si el JSON no trae categoría, asignamos 'General' por defecto
+            Category general = categoryRepository.findByTitle("General")
+                    .orElseThrow(() -> new ResourceNotFoundException("Error: La categoría 'General' debe existir en la base de datos."));
+            task.setCategory(general);
+        }
+
+        // 4. Procesar Tags (Si decides enviarlos en el JSON más adelante)
         if (task.getTags() != null) {
-            List<Tag> processedTags = task.getTags().stream().map(t -> {
-                return tagRepository.findByName(t.getName())
+            List<Tag> processedTags = task.getTags().stream().map(t -> 
+                tagRepository.findByNameAndAuthor(t.getName(), currentUser)
                     .orElseGet(() -> {
                         Tag newTag = new Tag();
                         newTag.setName(t.getName());
                         newTag.setAuthor(currentUser);
                         return tagRepository.save(newTag);
-                    });
-            }).collect(Collectors.toList());
+                    })
+            ).collect(Collectors.toList());
             task.setTags(processedTags);
         }
 
+        // 5. Configuración de metadatos y persistencia
         task.setAuthor(currentUser);
-        task.setCreatedAt(LocalDate.now());
+        task.setCreatedAt(LocalDate.now()); // Fecha de creación automática
+        
         return taskRepository.save(task);
     }
 
     // 2. EDITAR TAREA
     public Task updateTask(Long id, Task taskDetails, String username) {
+        // 1. Buscamos la tarea original para no perder el Author ni el ID
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("La tarea no existe."));
 
-        User user = userRepository.findByUsername(username).get();
+        // 2. Seguridad: Validar propiedad
+        validateOwnership(task, username);
 
-        // SEGURIDAD: Solo el dueño puede editar 
-        if (!task.getAuthor().getId().equals(user.getId())) {
-            throw new RuntimeException("No tienes permiso para editar esta tarea.");
-        }
-
+        // 3. Actualizamos todos los atributos de tu plantilla
         task.setTitle(taskDetails.getTitle());
         task.setDescription(taskDetails.getDescription());
         task.setCompleted(taskDetails.isCompleted());
         task.setDeadline(taskDetails.getDeadline());
         task.setPriority(taskDetails.getPriority());
+        task.setEstimatedTime(taskDetails.getEstimatedTime());
+        task.setImportant(taskDetails.isImportant());
 
-        if (taskDetails.getTags() != null) {
-            List<Tag> verifiedTags = taskDetails.getTags().stream()
-                .map(t -> tagRepository.findByName(t.getName())
-                    .orElseThrow(() -> new ResourceNotFoundException("Tag no encontrado: " + t.getName())))
-                .collect(Collectors.toList());
-            task.setTags(verifiedTags);
-        }
+        // 4. Gestión de Categoría por NOMBRE (Igual que en la creación)
+        if (taskDetails.getCategory() != null && taskDetails.getCategory().getTitle() != null) {
+            String catTitle = taskDetails.getCategory().getTitle();
+            // Buscamos la categoría por el nombre que viene en el JSON
+            Category existingCategory = categoryRepository.findByTitle(catTitle)
+                    .orElseThrow(() -> new ResourceNotFoundException("La categoría '" + catTitle + "' no existe."));
+            task.setCategory(existingCategory);
+        } 
+        // Si el JSON de edición no envía categoría, mantenemos la que ya tenía la tarea
+        // para evitar que pase a "General" por accidente si el usuario solo quería editar el título.
 
+        // 5. Persistencia (Hibernate hará un UPDATE)
         return taskRepository.save(task);
     }
 
