@@ -26,6 +26,7 @@ public class Tag {
     
     @Schema(accessMode = Schema.AccessMode.READ_ONLY) // El autor no se envía, se saca de la sesión
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "user_id", nullable = false)
     private User author; // El creador del tag
     
