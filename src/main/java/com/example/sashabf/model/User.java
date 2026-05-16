@@ -1,28 +1,23 @@
-package com.example.sashabf.model;
-
-
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+package com.example.sashabf.model; // Ajusta el paquete si es necesario
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
-
+@Data // Genera automáticamente getters, setters, equals, hashCode y toString
+@NoArgsConstructor 
+@AllArgsConstructor 
+@Builder 
 public class User {
 
     @Id
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, hidden = true)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -31,21 +26,15 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(name = "fullname")
     private String fullname;
-    
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, hidden = true)
     @Enumerated(EnumType.STRING)
-    private UserRole role; // USER o ADMIN
-    
-    
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private List<Task> tasks; 
-    
-    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private List<Tag> createdTags;
+    @Column(nullable = false)
+    private UserRole role; 
 }
+

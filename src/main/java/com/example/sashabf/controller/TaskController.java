@@ -26,7 +26,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
-@Tag(name = "Tareas", description = "Gestión de tareas personales y visualización de dashboards")
+@Tag(name = "Tareas-Usuario", description = "Gestión de tareas personales y visualización de dashboards")
 public class TaskController {
 
     @Autowired

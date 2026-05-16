@@ -1,5 +1,6 @@
 package com.example.sashabf.service;
 
+import com.example.sashabf.DTO.UpdateProfileDTO;
 import com.example.sashabf.exception.BadRequestException;
 import com.example.sashabf.exception.ResourceNotFoundException;
 import com.example.sashabf.model.User;
@@ -76,10 +77,18 @@ public class UserService {
             throw new BadRequestException("No tienes permiso para editar este perfil.");
         }
 
-        // 6. ACTUALIZAR CAMPOS
-        userToEdit.setFullname(userDetails.getFullname());
-        userToEdit.setEmail(userDetails.getEmail());
-        userToEdit.setUsername(userDetails.getUsername());
+     // 6. ACTUALIZAR CAMPOS (De forma segura, solo si vienen en el JSON)
+        if (userDetails.getFullname() != null && !userDetails.getFullname().trim().isEmpty()) {
+            userToEdit.setFullname(userDetails.getFullname());
+        }
+        
+        if (userDetails.getEmail() != null && !userDetails.getEmail().trim().isEmpty() && !userDetails.getEmail().equals("string")) {
+            userToEdit.setEmail(userDetails.getEmail());
+        }
+        
+        if (userDetails.getUsername() != null && !userDetails.getUsername().trim().isEmpty() && !userDetails.getUsername().equals("string")) {
+            userToEdit.setUsername(userDetails.getUsername());
+        }
 
         // 7. CONTRASEÑA (Solo si se envía una nueva y no es el "string" por defecto)
         if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty() && !userDetails.getPassword().equals("string")) {
@@ -146,5 +155,38 @@ public class UserService {
         
         user.setRole(UserRole.USER); // Cambiamos el rol a USER
         userRepository.save(user);
+    }
+ 
+ // Método exclusivo para que el usuario se edite a sí mismo desde su perfil
+    public User updateUserByUsername(String usernameActual, UpdateProfileDTO profileDto) {
+        // 1. Buscamos el usuario de la sesión (el dueño del perfil)
+        User userToEdit = userRepository.findByUsername(usernameActual)
+                .orElseThrow(() -> new BadRequestException("No se encontró el usuario de la sesión: " + usernameActual));
+
+        System.out.println("--- ACTUALIZANDO DESDE PERFIL ---");
+        System.out.println("Usuario: " + userToEdit.getUsername());
+
+        // 2. Actualizamos los campos de forma segura (igual que con el admin)
+        if (profileDto.getFullname() != null && !profileDto.getFullname().trim().isEmpty()) {
+            userToEdit.setFullname(profileDto.getFullname());
+        }
+        
+        if (profileDto.getEmail() != null && !profileDto.getEmail().trim().isEmpty() && !profileDto.getEmail().equals("string")) {
+            userToEdit.setEmail(profileDto.getEmail());
+        }
+        
+        if (profileDto.getUsername() != null && !profileDto.getUsername().trim().isEmpty() && !profileDto.getUsername().equals("string")) {
+            userToEdit.setUsername(profileDto.getUsername());
+        }
+
+        // 3. Contraseña
+        if (profileDto.getPassword() != null && !profileDto.getPassword().isEmpty() && !profileDto.getPassword().equals("string")) {
+            userToEdit.setPassword(passwordEncoder.encode(profileDto.getPassword()));
+        }
+
+        // NOTA: Aquí no tocamos el Rol. El usuario no puede cambiarse su propio rol.
+
+        // 4. Guardamos directamente este objeto
+        return userRepository.save(userToEdit);
     }
 }

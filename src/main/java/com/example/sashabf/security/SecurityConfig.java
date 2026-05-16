@@ -21,36 +21,34 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 
-                // 1. SWAGGER Y REGISTRO: Siempre lo primero y totalmente abierto
+                // 1. ACCESO LIBRE: Documentación y Registro
                 .requestMatchers(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/webjars/**",
-                    "/swagger-resources/**"
+                    "/api/auth/**"
                 ).permitAll()
-                .requestMatchers("/api/users/register").permitAll()
 
-                // 2. USUARIOS (ADMIN): Listado, borrado y roles
-                .requestMatchers(HttpMethod.GET, "/api/users").hasAuthority("ADMIN") 
-                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasAuthority("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/users/**").hasAnyAuthority("ADMIN", "USER","GESTOR")
-                //.requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
-                .requestMatchers(HttpMethod.PATCH, "/api/users/*/promote", "/api/users/*/demote").hasAuthority("ADMIN")
+                // 2. ZONA ADMIN (/api/admin/**): Solo para el rol ADMIN
+                // Bloqueamos todo el prefijo de golpe por seguridad
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
 
-                // 3. CATEGORÍAS: 
-                // Lectura permitida a todos los autenticados (USER, GESTOR, ADMIN)
+                // 3. ZONA GESTOR (/api/manager/**): Accesible para GESTOR y ADMIN
+                // Aquí es donde viven los endpoints de creación/edición de categorías
+                .requestMatchers("/api/manager/**").hasAnyAuthority("GESTOR", "ADMIN")
+
+             // 4. ZONA USUARIO Y DATOS COMUNES: Autenticados (USER, GESTOR, ADMIN)
+                // - El GET de categorías para que todos puedan usarlas
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").authenticated()
-                // Escritura (POST, PUT, DELETE) solo ADMIN y GESTOR
-                .requestMatchers("/api/categories/**").hasAnyAuthority("ADMIN", "GESTOR")
+                // - Gestión de tareas y etiquetas propias
+                .requestMatchers("/api/tasks/**").authenticated()
+                .requestMatchers("/api/tags/**").authenticated()
+                // - Gestión del perfil propio (Ver y Modificar)
+                .requestMatchers("/api/user/profile").authenticated() // <--- NUEVA RUTA DEL PUT
+                .requestMatchers("/api/users/me").authenticated()
 
-                // 4. TAGS Y TASKS: El USER y GESTOR pueden hacer CRUD
-                
-                .requestMatchers("/api/tags/**").hasAnyAuthority("USER", "GESTOR")
-                .requestMatchers("/api/tasks/**").hasAnyAuthority("USER", "GESTOR")
-
-                
-                // 5. CIERRE
+                // 5. CIERRE DE SEGURIDAD
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults());

@@ -21,15 +21,15 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users")
-@Tag(name = "Usuarios", description = "Endpoints para la gestión de cuentas y perfiles")
+@RequestMapping("/api/admin/users")
+@Tag(name = "Usuarios - Admin", description = "Endpoints para la gestión de cuentas y perfiles")
 public class UserController {
 
     @Autowired   
 	 private UserService userService;
 
    
-    	// 1. Registro público
+    	/* 1. Registro público
         @Operation(
             summary = "Registro de nuevo usuario",
             description = "Permite a cualquier persona crear una cuenta. Por defecto se asigna el rol USER.",
@@ -43,9 +43,9 @@ public class UserController {
         public ResponseEntity<User> register(@RequestBody User user) {
             User newUser = userService.registerUser(user);
             return new ResponseEntity<>(newUser, HttpStatus.CREATED);
-        }
+        }*/
 
-        // 2. Listado (Solo ADMIN)
+        // 1. Listado (Solo ADMIN)
         @Operation(
             summary = "Listar todos los usuarios",
             description = "Devuelve una lista completa de usuarios. Requiere rol ADMIN."
@@ -61,7 +61,7 @@ public class UserController {
             return ResponseEntity.ok(userService.getAllUsers());
         }
 
-        // 3. Eliminar (Solo ADMIN)
+        // 2. Eliminar (Solo ADMIN)
         @Operation(
             summary = "Eliminar un usuario",
             description = "Borra físicamente al usuario de la base de datos por su ID. Requiere rol ADMIN."
@@ -81,10 +81,10 @@ public class UserController {
             return ResponseEntity.noContent().build();
         }
         
-        // 4. Editar 
+        // 3. Editar 
         @Operation(
             summary = "Actualizar perfil de usuario",
-            description = "Permite modificar los datos de un usuario existente. Requiere rol ADMIN o ser el usuario en cuestión."
+            description = "Permite modificar los datos de un usuario existente. Requiere rol ADMIN ."
         )
         @ApiResponses(value = {
         		@ApiResponse(responseCode = "200", description = "Usuario actualizado correctamente"),
@@ -103,7 +103,7 @@ public class UserController {
             return ResponseEntity.ok(updatedUser);
         }
 
-       
+      //4. Promocionar a Gestor 
     
     @Operation(
             summary = "Promocionar a Gestor", 
@@ -121,7 +121,10 @@ public class UserController {
             userService.promoteToGestor(id);
             return ResponseEntity.ok(Map.of("message", "Usuario promocionado a GESTOR con éxito"));
         }
-
+    
+    
+    	//5. Degradar a User
+    
         @Operation(summary = "Degradar a Usuario", description = "Quita los permisos de Gestor a un usuario y lo devuelve al rol USER.")
         @ApiResponse(responseCode = "200", description = "Rol revocado correctamente")
         @ApiResponses(value = {

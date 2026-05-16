@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tags")
 // Resolvemos la colisión usando la ruta completa aquí para mantener los imports limpios
-@io.swagger.v3.oas.annotations.tags.Tag(name = "Etiquetas", description = "Gestión de etiquetas personales para tareas")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Etiquetas-Usuario", description = "Gestión de etiquetas personales para tareas")
 public class TagController {
 
     private final TagService tagService;

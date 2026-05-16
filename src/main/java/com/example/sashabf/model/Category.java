@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Entity
@@ -22,7 +24,7 @@ public class Category {
 
     @Column(nullable = false, unique = true)
     private String title; 
-
+    @JsonIgnore
     @OneToMany(mappedBy = "category")
     private List<Task> tasks; 
 }
