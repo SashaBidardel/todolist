@@ -22,7 +22,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/users")
-@Tag(name = "Usuarios - Admin", description = "Endpoints para la gestión de cuentas y perfiles")
+@Tag(name = "Usuarios-Admin", description = "Endpoints para la gestión de cuentas y perfiles")
 public class UserController {
 
     @Autowired   

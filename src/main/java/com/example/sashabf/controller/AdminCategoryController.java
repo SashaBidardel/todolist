@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/categories")
-@Tag(name = "Categorías - Admin", description = "Gestión administrativa total. Solo accesible para ADMIN.")
+@Tag(name = "Categorías-Admin", description = "Gestión administrativa total. Solo accesible para ADMIN.")
 @PreAuthorize("hasAuthority('ADMIN')")
 public class AdminCategoryController {
 

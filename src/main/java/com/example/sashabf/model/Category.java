@@ -23,6 +23,7 @@ public class Category {
     private Long id; 
 
     @Column(nullable = false, unique = true)
+    @Schema(example = "General", description = "Título de la categoría")
     private String title; 
     @JsonIgnore
     @OneToMany(mappedBy = "category")

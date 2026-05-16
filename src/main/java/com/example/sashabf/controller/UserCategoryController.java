@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
-@Tag(name = "Categorías - Usuario", description = "Endpoints de solo lectura para usuarios finales")
+@Tag(name = "Categorías-Usuario", description = "Endpoints de solo lectura para usuarios finales")
 public class UserCategoryController {
 
     @Autowired

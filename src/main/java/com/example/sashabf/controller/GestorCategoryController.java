@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/manager/categories")
-@Tag(name = "Categorías - Gestor", description = "Operaciones de creación y edición para GESTOR o ADMIN")
+@Tag(name = "Categorías-Gestor", description = "Operaciones de creación y edición para GESTOR ")
 @PreAuthorize("hasAnyAuthority('GESTOR', 'ADMIN')")
 public class GestorCategoryController {
 
