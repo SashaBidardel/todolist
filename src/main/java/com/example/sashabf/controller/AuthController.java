@@ -5,6 +5,7 @@ import com.example.sashabf.service.UserService; // Ajusta al nombre de tu servic
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Auth-Contoller", description = "Registro de nuevos usuarios.")
 public class AuthController {
 
     @Autowired
@@ -35,7 +37,6 @@ public class AuthController {
                 content = @Content(
                     mediaType = "application/json",
                     schema = @Schema(implementation = User.class),
-                    // Aquí forzamos el ejemplo exacto en Swagger ocultando el ID
                     examples = @ExampleObject(
                         name = "Ejemplo de Respuesta 201",
                         value = "{\n" +

@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/user")
-@Tag(name = "Perfil de Usuario")
+@Tag(name = "Perfil de Usuario",description = "Edición del perfil por el propio usuario.")
 public class UserProfileController {
 
     @Autowired 
