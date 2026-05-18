@@ -28,8 +28,8 @@ public class DataInitializer {
 	CommandLineRunner initDatabase(
 	        UserRepository repository, 
 	        CategoryRepository categoryRepository, 
-	        TaskRepository taskRepository, // Añadimos esto
-	        TagRepository tagRepository,   // Añadimos esto
+	        TaskRepository taskRepository, 
+	        TagRepository tagRepository,   
 	        BCryptPasswordEncoder encoder) {
 	    
 	    return args -> {
@@ -42,7 +42,7 @@ public class DataInitializer {
 	            admin.setEmail("admin@example.com");
 	            admin.setFullname("Administrador");
 	            repository.save(admin);
-	            System.out.println("✅ Usuario admin creado.");
+	            System.out.println("Usuario admin creado.");
 	        }
 
 	        // 2. Crear el USUARIO1
@@ -53,7 +53,7 @@ public class DataInitializer {
 	            u.setRole(UserRole.USER);
 	            u.setEmail("usuario1@example.com");
 	            u.setFullname("Usuario Uno");
-	            System.out.println("✅ Usuario 'usuario1' creado.");
+	            System.out.println("Usuario 'usuario1' creado.");
 	            return repository.save(u);
 	        });
 
@@ -61,18 +61,17 @@ public class DataInitializer {
 	        Category general = categoryRepository.findByTitle("General").orElseGet(() -> {
 	            Category c = new Category();
 	            c.setTitle("General");
-	            System.out.println("✅ Categoría 'General' creada.");
+	            System.out.println("Categoría 'General' creada.");
 	            return categoryRepository.save(c);
 	        });
 
 	        // 4. Crear el TAG creado por usuario1
-	        // (Asumiendo que Tag tiene relación con User y se llama 'tagusuario1')
 	        if (tagRepository.findByName("tagusuario1").isEmpty()) {
 	            Tag tag = new Tag();
 	            tag.setName("tagusuario1");
 	            tag.setAuthor(user1); // Asociamos el creador
 	            tagRepository.save(tag);
-	            System.out.println("✅ Tag 'tagusuario1' creado por usuario1.");
+	            System.out.println("Tag 'tagusuario1' creado por usuario1.");
 	        }
 
 	     // 5. Crear la TAREA creada por usuario1
