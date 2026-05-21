@@ -41,7 +41,7 @@ public class UserProfileController {
         @RequestBody UpdateProfileDTO profileDto, // <-- Recibe el DTO
         @AuthenticationPrincipal UserDetails currentUserDetails
     ) {
-        // El controlador solo extrae el username del token y se lo pasa todo al servicio
+        // El controlador solo extrae el username  y se lo pasa todo al servicio
         String usernameActual = currentUserDetails.getUsername();
         
         // Pasamos 'profileDto' al servicio
