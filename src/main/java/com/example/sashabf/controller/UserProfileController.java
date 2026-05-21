@@ -44,7 +44,7 @@ public class UserProfileController {
         // El controlador solo extrae el username del token y se lo pasa todo al servicio
         String usernameActual = currentUserDetails.getUsername();
         
-        // CORREGIDO: Ahora le pasamos 'profileDto' al servicio
+        // Pasamos 'profileDto' al servicio
         User updatedUser = userService.updateUserByUsername(usernameActual, profileDto);
         
         return ResponseEntity.ok(updatedUser);
