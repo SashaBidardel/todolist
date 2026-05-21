@@ -47,7 +47,7 @@ public class TaskService {
             throw new BadRequestException("Ya tienes una tarea llamada: " + task.getTitle());
         }
 
-        // 3. Lógica de Categoría (Basada en tu JSON)
+        // 3. Lógica de Categoría 
         if (task.getCategory() != null && task.getCategory().getTitle() != null) {
             String catTitle = task.getCategory().getTitle();
             // Buscamos la categoría por el nombre que viene en el JSON
@@ -61,7 +61,7 @@ public class TaskService {
             task.setCategory(general);
         }
 
-        // 4. Procesar Tags (Si decides enviarlos en el JSON más adelante)
+        // 4. Procesar Tags
         if (task.getTags() != null) {
             List<Tag> processedTags = task.getTags().stream().map(t -> 
                 tagRepository.findByNameAndAuthor(t.getName(), currentUser)
@@ -91,7 +91,7 @@ public class TaskService {
         // 2. Seguridad: Validar propiedad
         validateOwnership(task, username);
 
-        // 3. Actualizamos todos los atributos de tu plantilla
+        // 3. Actualizamos todos los atributos
         task.setTitle(taskDetails.getTitle());
         task.setDescription(taskDetails.getDescription());
         task.setCompleted(taskDetails.isCompleted());

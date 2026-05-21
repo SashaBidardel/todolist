@@ -184,7 +184,7 @@ public class UserService {
             userToEdit.setPassword(passwordEncoder.encode(profileDto.getPassword()));
         }
 
-        // NOTA: Aquí no tocamos el Rol. El usuario no puede cambiarse su propio rol.
+        // No tocamos el Rol. El usuario no puede cambiarse su propio rol.
 
         // 4. Guardamos directamente este objeto
         return userRepository.save(userToEdit);
